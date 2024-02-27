@@ -147,7 +147,59 @@ class HarrisKeypointDetector(KeypointDetector):
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        raise Exception("TODO 1 : dans features.py non implémenté !")               
+
+        W = np.ones((3,3), dtype=np.float32)
+
+        der_x = scipy.ndimage.sobel(srcImage, axis=1, mode='reflect')
+        der_y = scipy.ndimage.sobel(srcImage, axis=0, mode='reflect')
+
+        I_x = der_x ** 2
+        I_x_I_y = der_x * der_y
+        I_y = der_y ** 2
+
+        W_I_x_2 =  scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_x, 0.5, radius=2, mode='reflect'), W, mode='reflect')
+        W_I_x_I_y = scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, radius=2, mode='reflect'), W, mode='reflect')
+        W_I_y_2 = scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2 ,mode='reflect'), W, mode='reflect')
+
+        for i in range(height):
+            for j in range(width):
+                H_pixel = np.array([[W_I_x_2[i,j],W_I_x_I_y[i,j]],[W_I_x_I_y[i,j],W_I_y_2[i,j]]])
+                vals,_ = np.linalg.eig(H_pixel)
+                harrisImage[i,j] = np.linalg.det(H_pixel) - 0.1 * (np.trace(H_pixel)**2)
+                orientationImage[i,j] = np.degrees(np.arctan2(der_x[i,j], der_y[i,j]))
+
+        # Plot images
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(3, 3, figsize=(10, 10))
+
+        axs[0, 0].imshow(srcImage)
+        axs[0, 0].set_title('Source Image')
+
+        axs[0, 1].imshow(der_x)
+        axs[0, 1].set_title('Derivative X')
+
+        axs[0, 2].imshow(der_y)
+        axs[0, 2].set_title('Derivative Y')
+
+        axs[1, 0].imshow(I_x)
+        axs[1, 0].set_title('I_x')
+
+        axs[1, 1].imshow(I_y)
+        axs[1, 1].set_title('I_y')
+
+        axs[1, 2].imshow(harrisImage)
+        axs[1, 2].set_title('harrisImage Image')
+
+        axs[2, 0].imshow(orientationImage)
+        axs[2, 0].set_title('orientationImage Image')
+
+        for ax in axs.flat:
+            ax.axis('off')
+        plt.show()
+
+
+        # raise Exception("TODO 1 : dans features.py non implémenté !")
         # TODO-BLOC-FIN
 
         return harrisImage, orientationImage
@@ -159,9 +211,9 @@ class HarrisKeypointDetector(KeypointDetector):
                            chaque pixel.
 
         Sortie :
-            destImage -- tableau numpy contenant True/False à 
-                         chaque pixel, indiquant si la valeur 
-                         de celui-ci est un maximum local dans 
+            destImage -- tableau numpy contenant True/False à
+                         chaque pixel, indiquant si la valeur
+                         de celui-ci est un maximum local dans
                          son voisinage 7x7.
         '''
         destImage = np.zeros_like(harrisImage, bool)
@@ -170,7 +222,7 @@ class HarrisKeypointDetector(KeypointDetector):
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        raise Exception("TODO 2 : dans features.py non implémenté")                
+        raise Exception("TODO 2 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
         return destImage
@@ -180,9 +232,9 @@ class HarrisKeypointDetector(KeypointDetector):
         Entrée :
             image -- Image uint8 BGR avec des valeurs comprises entre [0, 255]
         Sortie :
-            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec 
-            les coordonnées des points-clés détectés, l'angle du gradient (en degrés), 
-            la réponse du détecteur (score Harris pour le détecteur Harris) et 
+            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec
+            les coordonnées des points-clés détectés, l'angle du gradient (en degrés),
+            la réponse du détecteur (score Harris pour le détecteur Harris) et
             définissez le paramètre de voisinage 'size' sur 10.
         '''
         image = image.astype(np.float32)
@@ -193,31 +245,31 @@ class HarrisKeypointDetector(KeypointDetector):
         # Créer une image en niveaux de gris utilisée pour la détection de Harris
         grayImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # computeHarrisValues() calcule le score de Harris à chaque position de 
+        # computeHarrisValues() calcule le score de Harris à chaque position de
         # pixel, stockant le résultat dans harrisImage.
         # Vous devrez implémenter cette fonction.
         harrisImage, orientationImage = self.computeHarrisValues(grayImage)
 
-        # Calcule les maxima locaux dans l'image Harris. Vous devrez implémenter 
-        # cette fonction. Crée une image pour étiqueter les valeurs maximales 
+        # Calcule les maxima locaux dans l'image Harris. Vous devrez implémenter
+        # cette fonction. Crée une image pour étiqueter les valeurs maximales
         # locales de Harris comme Vrai, les autres pixels sur Faux
         harrisMaxImage = self.computeLocalMaxima(harrisImage)
 
-        # Parcourez les points-clés dans harrisMaxImage et remplissez les 
-        # informations nécessaires au calcul du descripteur pour chaque point. 
+        # Parcourez les points-clés dans harrisMaxImage et remplissez les
+        # informations nécessaires au calcul du descripteur pour chaque point.
         # Vous devez remplir x, y et angle.
 
-        row, col = np.where(harrisMaxImage == True) 
-        
+        row, col = np.where(harrisMaxImage == True)
+
         for i in range(np.size(row)):
           y = int(row[i])
           x = int(col[i])
 
           f = cv2.KeyPoint()
 
-          # TODO 3 : Remplissez la primitive f avec les données de 
-          # position et d'orientation. Initialisez f.size à 10, 
-          # f.pt à la coordonnée (x, y), f.angle à l'orientation 
+          # TODO 3 : Remplissez la primitive f avec les données de
+          # position et d'orientation. Initialisez f.size à 10,
+          # f.pt à la coordonnée (x, y), f.angle à l'orientation
           # en degrés et f.response au score de Harris
           # TODO-BLOC-DEBUT
           # N'oubliez pas d'enlever ou de commenter la ligne en dessous
@@ -236,9 +288,9 @@ class ORBKeypointDetector(KeypointDetector):
         Entrée :
             image -- Image uint8 BGR avec des valeurs comprises entre [0, 255]
         Sortie :
-            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec 
-            les coordonnées des points-clés détectés, l'angle du gradient (en degrés), 
-            la réponse du détecteur (score Harris pour le détecteur Harris) et 
+            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec
+            les coordonnées des points-clés détectés, l'angle du gradient (en degrés),
+            la réponse du détecteur (score Harris pour le détecteur Harris) et
             définissez le paramètre de voisinage 'size' sur 10.
         '''
         detector = cv2.ORB_create()
@@ -254,8 +306,8 @@ class FeatureDescriptor(object):
         '''
         Entrée :
             image -- image BGR avec des valeurs comprises entre [0, 255]
-            keypoints -- les points-clés détectés, nous devons calculer 
-            les descripteurs de primitives aux coordonnées spécifiées 
+            keypoints -- les points-clés détectés, nous devons calculer
+            les descripteurs de primitives aux coordonnées spécifiées
         Sortie :
             Tableau numpy de descripteurs, dimensions :
                 nombre de points-clés x dimension du descripteur
@@ -269,8 +321,8 @@ class SimpleFeatureDescriptor(FeatureDescriptor):
         '''
         Entrée :
             image -- image BGR avec des valeurs comprises entre [0, 255]
-            keypoints -- les points-clés détectés, nous devons calculer 
-            les descripteurs de primitives aux coordonnées spécifiées 
+            keypoints -- les points-clés détectés, nous devons calculer
+            les descripteurs de primitives aux coordonnées spécifiées
         Sortie :
             desc -- Tableau numpy K x 25, où K est le nombre de points-clés,
                     25 est la taille du descripteur
@@ -283,11 +335,11 @@ class SimpleFeatureDescriptor(FeatureDescriptor):
         for i, f in enumerate(keypoints):
             x, y = int(f.pt[0]), int(f.pt[1])
 
-            # TODO 4 : Le descripteur simple est une fenêtre 5x5 d'intensités 
-            # centrée sur le point d'intérêt. Stockez le descripteur en 
-            # tant que vecteur-ligne dans le tableau numpy. Traitez les 
+            # TODO 4 : Le descripteur simple est une fenêtre 5x5 d'intensités
+            # centrée sur le point d'intérêt. Stockez le descripteur en
+            # tant que vecteur-ligne dans le tableau numpy. Traitez les
             # pixels à l'extérieur de l'image comme des zéros.
-            # TODO-BLOC-DEBUT            
+            # TODO-BLOC-DEBUT
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
             raise Exception("TODO 4 : dans features.py non implémenté")
@@ -302,8 +354,8 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
         '''
         Entrée :
             image -- image BGR avec des valeurs comprises entre [0, 255]
-            keypoints -- les points-clés détectés, nous devons calculer 
-            les descripteurs de primitives aux coordonnées spécifiées 
+            keypoints -- les points-clés détectés, nous devons calculer
+            les descripteurs de primitives aux coordonnées spécifiées
         Sortie :
             desc -- Tableau numpy K x W^2, où K est le nombre de points-clés
                     et W est la taille de la fenêtre
@@ -311,8 +363,8 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
 
         image = image.astype(np.float32)
         image /= 255.
-        # Cette image représente la fenêtre autour du point-clé que 
-        # vous devez utiliser pour calculer le descripteur de primitive 
+        # Cette image représente la fenêtre autour du point-clé que
+        # vous devez utiliser pour calculer le descripteur de primitive
         # (stockée ligne par ligne)
         windowSize = 8
         desc = np.zeros((len(keypoints), windowSize * windowSize))
@@ -320,10 +372,10 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
         grayImage = ndimage.gaussian_filter(grayImage, 0.5)
 
         for i, f in enumerate(keypoints):
-            #TODO 5 : Calculez la transformation selon l'emplacement et 
-            # l'orientation du point-clé. Vous devez calculer la transformation 
-            # pour chaque pixel de la fenêtre 40x40 pivotée et entourant 
-            # le point-clé vers les pixels appropriés dans l'image du 
+            #TODO 5 : Calculez la transformation selon l'emplacement et
+            # l'orientation du point-clé. Vous devez calculer la transformation
+            # pour chaque pixel de la fenêtre 40x40 pivotée et entourant
+            # le point-clé vers les pixels appropriés dans l'image du
             # descripteur de primitive 8x8.
             transMx = np.zeros((2, 3))
 
@@ -339,9 +391,9 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
                 (windowSize, windowSize), flags=cv2.INTER_AREA)
 
             # TODO 6 : Normalisez le descripteur pour avoir une moyenne nulle
-            # et une variance égale à 1. Si la variance avant normalisation 
-            # est négligeable (que nous définissons comme inférieure à 1e-10), 
-            # alors affectez zéro au descripteur. Enfin, stockez le descripteur 
+            # et une variance égale à 1. Si la variance avant normalisation
+            # est négligeable (que nous définissons comme inférieure à 1e-10),
+            # alors affectez zéro au descripteur. Enfin, stockez le descripteur
             # dans le tableau 'desc'.
             # TODO-BLOC-DEBUT
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
@@ -357,8 +409,8 @@ class ORBFeatureDescriptor(KeypointDetector):
         '''
         Entrée :
             image -- image BGR avec des valeurs comprises entre [0, 255]
-            keypoints -- les points-clés détectés, nous devons calculer 
-            les descripteurs de primitives aux coordonnées spécifiées 
+            keypoints -- les points-clés détectés, nous devons calculer
+            les descripteurs de primitives aux coordonnées spécifiées
         Sortie :
             Tableau numpy de descripteurs, dimensions :
                 nombre de points-clés x dimension du descripteur
@@ -392,9 +444,9 @@ class FeatureMatcher(object):
         '''
         raise NotImplementedError
 
-    # Évalue une paire de correspondance en se basant sur une homographie 
-    # connue. Cette fonction calcule la distance euclidienne moyenne entre les 
-    # points-clés appariés et les positions réelles transformées par 
+    # Évalue une paire de correspondance en se basant sur une homographie
+    # connue. Cette fonction calcule la distance euclidienne moyenne entre les
+    # points-clés appariés et les positions réelles transformées par
     # homographie.
 
     @staticmethod
@@ -408,7 +460,7 @@ class FeatureMatcher(object):
             ptOld = np.array(features2[id2].pt)
             ptNew = FeatureMatcher.applyHomography(features1[id1].pt, h)
 
-            # Distance euclidienne 
+            # Distance euclidienne
             d += np.linalg.norm(ptNew - ptOld)
             n += 1
 
@@ -452,8 +504,8 @@ class SSDFeatureMatcher(FeatureMatcher):
         if desc1.shape[0] == 0 or desc2.shape[0] == 0:
             return []
 
-        # TODO 7 : Effectuez une mise en correspondance simple des primitives. 
-        # Faites correspondre une primitive de la première image avec la primitive 
+        # TODO 7 : Effectuez une mise en correspondance simple des primitives.
+        # Faites correspondre une primitive de la première image avec la primitive
         # la plus proche de la seconde image on utilisant la distance SMC entre
         # descripteurs.
         # TODO-BLOC-DEBUT
@@ -494,11 +546,11 @@ class RatioFeatureMatcher(FeatureMatcher):
         if desc1.shape[0] == 0 or desc2.shape[0] == 0:
             return []
 
-        # TODO 8 : Effectuez une mise en correspondance des primitives 
+        # TODO 8 : Effectuez une mise en correspondance des primitives
         # utilisant le rapport de distance entre primitives.
-        # Faites correspondre une primitive de la première image avec la primitive 
-        # la plus proche de la seconde image on utilisant le rapport de distance 
-        # entre les deux meilleurs descripteurs correspondants.        
+        # Faites correspondre une primitive de la première image avec la primitive
+        # la plus proche de la seconde image on utilisant le rapport de distance
+        # entre les deux meilleurs descripteurs correspondants.
         # Utilisez un seuil de 0.7 pour sélectionner les 'bonnes' correspondances
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
