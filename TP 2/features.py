@@ -148,8 +148,6 @@ class HarrisKeypointDetector(KeypointDetector):
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
 
-        W = np.ones((3,3), dtype=np.float32)
-
         der_x = scipy.ndimage.sobel(srcImage, axis=1, mode='reflect')
         der_y = scipy.ndimage.sobel(srcImage, axis=0, mode='reflect')
 
@@ -157,14 +155,13 @@ class HarrisKeypointDetector(KeypointDetector):
         I_x_I_y = der_x * der_y
         I_y = der_y ** 2
 
-        W_I_x_2 =  scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_x, 0.5, radius=2, mode='reflect'), W, mode='reflect')
-        W_I_x_I_y = scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, radius=2, mode='reflect'), W, mode='reflect')
-        W_I_y_2 = scipy.ndimage.convolve( scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2 ,mode='reflect'), W, mode='reflect')
+        W_I_x_2 = scipy.ndimage.gaussian_filter(I_x, 0.5, radius=2, mode='reflect')
+        W_I_x_I_y = scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, radius=2, mode='reflect')
+        W_I_y_2 = scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2 ,mode='reflect')
 
         for i in range(height):
             for j in range(width):
                 H_pixel = np.array([[W_I_x_2[i,j],W_I_x_I_y[i,j]],[W_I_x_I_y[i,j],W_I_y_2[i,j]]])
-                vals,_ = np.linalg.eig(H_pixel)
                 harrisImage[i,j] = np.linalg.det(H_pixel) - 0.1 * (np.trace(H_pixel)**2)
                 orientationImage[i,j] = np.degrees(np.arctan2(der_x[i,j], der_y[i,j]))
 
@@ -193,6 +190,13 @@ class HarrisKeypointDetector(KeypointDetector):
 
         axs[2, 0].imshow(orientationImage)
         axs[2, 0].set_title('orientationImage Image')
+
+        axs[2, 1].imshow(W_I_x_2)
+        axs[2, 1].set_title('W_I_x_2 Image')
+
+        axs[2, 2].imshow(W_I_y_2)
+        axs[2, 2].set_title('W_I_y_2 Image')
+
 
         for ax in axs.flat:
             ax.axis('off')
