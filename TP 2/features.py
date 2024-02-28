@@ -13,7 +13,8 @@ from scipy import ndimage, spatial
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 '''
 
-#def inbounds(shape, indices):
+
+# def inbounds(shape, indices):
 #    assert len(shape) == len(indices)
 #    for i, ind in enumerate(indices):
 #        if ind < 0 or ind >= shape[i]:
@@ -29,27 +30,27 @@ class KeypointDetector(object):
         Entrée :
             image -- Image uint8 BGR avec des valeurs comprises entre [0, 255]
         Sortie :
-            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec 
-            les coordonnées des points-clés détectés, l'angle du gradient (en degrés), 
-            la réponse du détecteur (score Harris pour le détecteur Harris) et 
+            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec
+            les coordonnées des points-clés détectés, l'angle du gradient (en degrés),
+            la réponse du détecteur (score Harris pour le détecteur Harris) et
             définissez le paramètre de voisinage 'size' sur 10.
         '''
         raise NotImplementedError()
 
     # Applique la méthode de suppression non-maximale adaptative
-    # pour la sélection des points-clés 
-    def selectKeypointsANMS(self, keypoints, maxNbrPoints = 1000):
+    # pour la sélection des points-clés
+    def selectKeypointsANMS(self, keypoints, maxNbrPoints=1000):
         '''
         Entrée :
-            keypoints -- liste d'objets cv2.KeyPoint des points-clés détectés. 
+            keypoints -- liste d'objets cv2.KeyPoint des points-clés détectés.
             nbrPoints -- nombre maximal de points-clés à retouner
         Sortie :
-            features -- liste d'objets cv2.KeyPoint des points-clés détectés 
+            features -- liste d'objets cv2.KeyPoint des points-clés détectés
             utilisant la méthode Adaptive Non-Maximal Suppression (ANMS).
         '''
         features = []
 
-        # TODO Bonus : Implémentez ici la méthode de suppression non-maximale 
+        # TODO Bonus : Implémentez ici la méthode de suppression non-maximale
         # adaptative pour la sélection des points-clés les plus pertinents
         # TODO-BLOC-DEBUT
         raise NotImplementedError("Tâche Bonus dans features.py non implémentée !")
@@ -57,48 +58,49 @@ class KeypointDetector(object):
 
         return features
 
+
 class DummyKeypointDetector(KeypointDetector):
     '''
-    Calcul caduc de primitives. Cela ne fait rien de significatif, mais peut 
+    Calcul caduc de primitives. Cela ne fait rien de significatif, mais peut
     être utile à utiliser comme exemple.
     '''
+
     def detectKeypoints(self, image):
         '''
         Entrée :
             image -- Image uint8 BGR avec des valeurs comprises entre [0, 255]
         Sortie :
-            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec 
-            les coordonnées des points-clés détectés, l'angle du gradient (en degrés), 
-            la réponse du détecteur (score Harris pour le détecteur Harris) et 
+            liste des points-clés détectés, remplissez les objets cv2.KeyPoint avec
+            les coordonnées des points-clés détectés, l'angle du gradient (en degrés),
+            la réponse du détecteur (score Harris pour le détecteur Harris) et
             définissez le paramètre de voisinage 'size' sur 10.
         '''
         image = image.astype(np.float32)
         image /= 255.
         features = []
         height, width = image.shape[:2]
-           
+
         r = image[:, :, 0]
         g = image[:, :, 1]
         b = image[:, :, 2]
-                 
-        #vector = np.vectorize(np.int_)
-        #row, col = np.where( vector(255 * (r + g + b) + 0.5) % 100 == 1)
-        row, col = np.where(       (255 * (r + g + b) + 0.5).astype(int) % 100 == 1)
 
+        # vector = np.vectorize(np.int_)
+        # row, col = np.where( vector(255 * (r + g + b) + 0.5) % 100 == 1)
+        row, col = np.where((255 * (r + g + b) + 0.5).astype(int) % 100 == 1)
 
         for i in range(np.size(row)):
-          (y, x) = (int(row[i]), int(col[i]))
+            (y, x) = (int(row[i]), int(col[i]))
 
-          f = cv2.KeyPoint()
-          f.pt = (x, y)
-          # Dummy size
-          f.size = 10
-          f.angle = 0
-          f.response = 10
+            f = cv2.KeyPoint()
+            f.pt = (x, y)
+            # Dummy size
+            f.size = 10
+            f.angle = 0
+            f.response = 10
 
-          features.append(f)
+            features.append(f)
 
-        #for y in range(height):
+        # for y in range(height):
         #    for x in range(width):
         #        r = image[y, x, 0]
         #        g = image[y, x, 1]
@@ -125,15 +127,15 @@ class HarrisKeypointDetector(KeypointDetector):
     def computeHarrisValues(self, srcImage):
         '''
         Entrée :
-            srcImage -- Image d'entrée en niveaux de gris dans un tableau 
-                        numpy avec des valeurs dans [0, 1]. Les dimensions 
+            srcImage -- Image d'entrée en niveaux de gris dans un tableau
+                        numpy avec des valeurs dans [0, 1]. Les dimensions
                         sont (lignes, cols).
 
         Sortie :
             harrisImage -- tableau numpy contenant le score de Harris à
                            chaque pixel.
 
-            orientationImage -- tableau numpy contenant l'orientation du gradient 
+            orientationImage -- tableau numpy contenant l'orientation du gradient
                                 à chaque pixel en degrés.
         '''
         height, width = srcImage.shape[:2]
@@ -157,52 +159,51 @@ class HarrisKeypointDetector(KeypointDetector):
 
         W_I_x_2 = scipy.ndimage.gaussian_filter(I_x, 0.5, radius=2, mode='reflect')
         W_I_x_I_y = scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, radius=2, mode='reflect')
-        W_I_y_2 = scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2 ,mode='reflect')
+        W_I_y_2 = scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2, mode='reflect')
 
         for i in range(height):
             for j in range(width):
-                H_pixel = np.array([[W_I_x_2[i,j],W_I_x_I_y[i,j]],[W_I_x_I_y[i,j],W_I_y_2[i,j]]])
-                harrisImage[i,j] = np.linalg.det(H_pixel) - 0.1 * (np.trace(H_pixel)**2)
-                orientationImage[i,j] = np.degrees(np.arctan2(der_x[i,j], der_y[i,j]))
+                H_pixel = np.array([[W_I_x_2[i, j], W_I_x_I_y[i, j]], [W_I_x_I_y[i, j], W_I_y_2[i, j]]])
+                harrisImage[i, j] = np.linalg.det(H_pixel) - 0.1 * (np.trace(H_pixel) ** 2)
+                orientationImage[i, j] = np.degrees(np.arctan2(der_x[i, j], der_y[i, j]))
 
         # Plot images
-        import matplotlib.pyplot as plt
-
-        fig, axs = plt.subplots(3, 3, figsize=(10, 10))
-
-        axs[0, 0].imshow(srcImage)
-        axs[0, 0].set_title('Source Image')
-
-        axs[0, 1].imshow(der_x)
-        axs[0, 1].set_title('Derivative X')
-
-        axs[0, 2].imshow(der_y)
-        axs[0, 2].set_title('Derivative Y')
-
-        axs[1, 0].imshow(I_x)
-        axs[1, 0].set_title('I_x')
-
-        axs[1, 1].imshow(I_y)
-        axs[1, 1].set_title('I_y')
-
-        axs[1, 2].imshow(harrisImage)
-        axs[1, 2].set_title('harrisImage Image')
-
-        axs[2, 0].imshow(orientationImage)
-        axs[2, 0].set_title('orientationImage Image')
-
-        axs[2, 1].imshow(W_I_x_2)
-        axs[2, 1].set_title('W_I_x_2 Image')
-
-        axs[2, 2].imshow(W_I_y_2)
-        axs[2, 2].set_title('W_I_y_2 Image')
-
-
-        for ax in axs.flat:
-            ax.axis('off')
-        plt.show()
-
-
+        # import matplotlib.pyplot as plt
+        #
+        # fig, axs = plt.subplots(3, 3, figsize=(10, 10))
+        #
+        # axs[0, 0].imshow(srcImage)
+        # axs[0, 0].set_title('Source Image')
+        #
+        # axs[0, 1].imshow(der_x)
+        # axs[0, 1].set_title('Derivative X')
+        #
+        # axs[0, 2].imshow(der_y)
+        # axs[0, 2].set_title('Derivative Y')
+        #
+        # axs[1, 0].imshow(I_x)
+        # axs[1, 0].set_title('I_x')
+        #
+        # axs[1, 1].imshow(I_y)
+        # axs[1, 1].set_title('I_y')
+        #
+        # axs[1, 2].imshow(harrisImage)
+        # axs[1, 2].set_title('harrisImage Image')
+        #
+        # axs[2, 0].imshow(orientationImage)
+        # axs[2, 0].set_title('orientationImage Image')
+        #
+        # axs[2, 1].imshow(W_I_x_2)
+        # axs[2, 1].set_title('W_I_x_2 Image')
+        #
+        # axs[2, 2].imshow(W_I_y_2)
+        # axs[2, 2].set_title('W_I_y_2 Image')
+        #
+        #
+        # for ax in axs.flat:
+        #     ax.axis('off')
+        # plt.show()
+        #
         # raise Exception("TODO 1 : dans features.py non implémenté !")
         # TODO-BLOC-FIN
 
@@ -226,7 +227,11 @@ class HarrisKeypointDetector(KeypointDetector):
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        raise Exception("TODO 2 : dans features.py non implémenté")
+        w = np.ones((7, 7))
+        destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
+        destImage = (harrisImage == destImage)
+
+        # raise Exception("TODO 2 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
         return destImage
@@ -266,22 +271,26 @@ class HarrisKeypointDetector(KeypointDetector):
         row, col = np.where(harrisMaxImage == True)
 
         for i in range(np.size(row)):
-          y = int(row[i])
-          x = int(col[i])
+            y = int(row[i])
+            x = int(col[i])
 
-          f = cv2.KeyPoint()
+            f = cv2.KeyPoint()
 
-          # TODO 3 : Remplissez la primitive f avec les données de
-          # position et d'orientation. Initialisez f.size à 10,
-          # f.pt à la coordonnée (x, y), f.angle à l'orientation
-          # en degrés et f.response au score de Harris
-          # TODO-BLOC-DEBUT
-          # N'oubliez pas d'enlever ou de commenter la ligne en dessous
-          # quand vous implémentez le code de ce TODO
-          raise Exception("TODO 3 : dans features.py non implémenté")
-          # TODO-BLOC-FIN
+            # TODO 3 : Remplissez la primitive f avec les données de
+            # position et d'orientation. Initialisez f.size à 10,
+            # f.pt à la coordonnée (x, y), f.angle à l'orientation
+            # en degrés et f.response au score de Harris
+            # TODO-BLOC-DEBUT
+            # N'oubliez pas d'enlever ou de commenter la ligne en dessous
+            # quand vous implémentez le code de ce TODO
+            f.pt = (x, y)
+            f.angle = orientationImage[y, x]
+            f.size = 10
+            f.response = harrisImage[y, x]
+            # raise Exception("TODO 3 : dans features.py non implémenté")
+            # TODO-BLOC-FIN
 
-          features.append(f)
+            features.append(f)
 
         return features
 
@@ -376,7 +385,7 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
         grayImage = ndimage.gaussian_filter(grayImage, 0.5)
 
         for i, f in enumerate(keypoints):
-            #TODO 5 : Calculez la transformation selon l'emplacement et
+            # TODO 5 : Calculez la transformation selon l'emplacement et
             # l'orientation du point-clé. Vous devez calculer la transformation
             # pour chaque pixel de la fenêtre 40x40 pivotée et entourant
             # le point-clé vers les pixels appropriés dans l'image du
@@ -392,7 +401,7 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
             # Appel la fonction de distorsion affine pour effectuer le mappage
             # elle requiert une matrice 2x3
             destImage = cv2.warpAffine(grayImage, transMx,
-                (windowSize, windowSize), flags=cv2.INTER_AREA)
+                                       (windowSize, windowSize), flags=cv2.INTER_AREA)
 
             # TODO 6 : Normalisez le descripteur pour avoir une moyenne nulle
             # et une variance égale à 1. Si la variance avant normalisation
@@ -474,10 +483,10 @@ class FeatureMatcher(object):
     @staticmethod
     def applyHomography(pt, h):
         x, y = pt
-        d = h[6]*x + h[7]*y + h[8]
+        d = h[6] * x + h[7] * y + h[8]
 
-        return np.array([(h[0]*x + h[1]*y + h[2]) / d,
-            (h[3]*x + h[4]*y + h[5]) / d])
+        return np.array([(h[0] * x + h[1] * y + h[2]) / d,
+                         (h[3] * x + h[4] * y + h[5]) / d])
 
 
 class SSDFeatureMatcher(FeatureMatcher):
