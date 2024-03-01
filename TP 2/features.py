@@ -227,10 +227,12 @@ class HarrisKeypointDetector(KeypointDetector):
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        w = np.ones((7, 7))
-        destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
-        destImage = (harrisImage == destImage)
 
+        _, destImage = cv2.threshold(harrisImage, np.mean(harrisImage) + 0.03, np.max(harrisImage), cv2.THRESH_BINARY)
+        destImage = destImage.astype(bool)
+
+        # destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
+        
         # raise Exception("TODO 2 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
