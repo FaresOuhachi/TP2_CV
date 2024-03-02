@@ -355,9 +355,10 @@ class SimpleFeatureDescriptor(FeatureDescriptor):
             # tant que vecteur-ligne dans le tableau numpy. Traitez les
             # pixels à l'extérieur de l'image comme des zéros.
             # TODO-BLOC-DEBUT
+            desc[i, :] = grayImage[y - 2:y + 3, x - 2:x + 3].reshape(-1)
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
-            raise Exception("TODO 4 : dans features.py non implémenté")
+            # raise Exception("TODO 4 : dans features.py non implémenté")
             # TODO-BLOC-FIN
 
         return desc
