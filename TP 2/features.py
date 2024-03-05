@@ -157,15 +157,12 @@ class HarrisKeypointDetector(KeypointDetector):
         I_x_I_y = der_x * der_y
         I_y = der_y ** 2
 
-        W_I_x_2 = scipy.ndimage.gaussian_filter(I_x, 0.5, radius=2, mode='reflect')
-        W_I_x_I_y = scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, radius=2, mode='reflect')
-        W_I_y_2 = scipy.ndimage.gaussian_filter(I_y, 0.5, radius=2, mode='reflect')
+        W_I_x_2 = scipy.ndimage.gaussian_filter(I_x, 0.5, mode='reflect')
+        W_I_x_I_y = scipy.ndimage.gaussian_filter(I_x_I_y, 0.5, mode='reflect')
+        W_I_y_2 = scipy.ndimage.gaussian_filter(I_y, 0.5, mode='reflect')
 
-        for i in range(height):
-            for j in range(width):
-                H_pixel = np.array([[W_I_x_2[i, j], W_I_x_I_y[i, j]], [W_I_x_I_y[i, j], W_I_y_2[i, j]]])
-                harrisImage[i, j] = np.linalg.det(H_pixel) - 0.1 * (np.trace(H_pixel) ** 2)
-                orientationImage[i, j] = np.degrees(np.arctan2(der_x[i, j], der_y[i, j]))
+        harrisImage = W_I_x_2 * W_I_y_2 - W_I_x_I_y ** 2 - 0.1 * (W_I_x_2 + W_I_y_2) ** 2
+        orientationImage = np.degrees(np.arctan2(der_x, der_y))
 
         # Plot images
         # import matplotlib.pyplot as plt
@@ -203,7 +200,7 @@ class HarrisKeypointDetector(KeypointDetector):
         # for ax in axs.flat:
         #     ax.axis('off')
         # plt.show()
-        #
+        # #
         # raise Exception("TODO 1 : dans features.py non implémenté !")
         # TODO-BLOC-FIN
 
@@ -228,11 +225,11 @@ class HarrisKeypointDetector(KeypointDetector):
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
 
+        # destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
         _, destImage = cv2.threshold(harrisImage, np.mean(harrisImage) + 0.03, np.max(harrisImage), cv2.THRESH_BINARY)
         destImage = destImage.astype(bool)
 
-        # destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
-        
+
         # raise Exception("TODO 2 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
@@ -398,11 +395,11 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
             # TODO-BLOC-DEBUT
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
-            raise Exception("TODO 5 : dans features.py non implémenté")
             # TODO-BLOC-FIN
 
             # Appel la fonction de distorsion affine pour effectuer le mappage
             # elle requiert une matrice 2x3
+
             destImage = cv2.warpAffine(grayImage, transMx,
                                        (windowSize, windowSize), flags=cv2.INTER_AREA)
 
@@ -412,9 +409,14 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
             # alors affectez zéro au descripteur. Enfin, stockez le descripteur
             # dans le tableau 'desc'.
             # TODO-BLOC-DEBUT
+
+            print(f'destImage: {destImage}')
+            # Sélectionnez la partie de la transformation résultante correspondant au patch 8x8
+            desc[i, :] = (destImage - np.mean(destImage)) / np.std(destImage) if np.abs(np.std(destImage)) > 1e-10 else 0
+
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
-            raise Exception("TODO 6 : dans features.py non implémenté")
+            # raise Exception("TODO 6 : dans features.py non implémenté")
             # TODO-BLOC-FIN
 
         return desc
