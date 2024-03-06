@@ -225,11 +225,19 @@ class HarrisKeypointDetector(KeypointDetector):
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
 
-        # destImage = scipy.ndimage.maximum_filter(harrisImage, size=(7, 7), mode='reflect')
-        _, destImage = cv2.threshold(harrisImage, np.mean(harrisImage) + 0.03, np.max(harrisImage), cv2.THRESH_BINARY)
-        destImage = destImage.astype(bool)
+        local_max= ndimage.maximum_filter(harrisImage,size=7, mode='reflect')
+        destImage = (harrisImage == local_max) & (harrisImage > .00005)
 
-
+        #plot images
+        import matplotlib.pyplot as plt
+        fig, axs = plt.subplots(1, 2, figsize=(10, 10))
+        axs[0].imshow(harrisImage, cmap='gray')
+        axs[0].set_title('Harris Image')
+        axs[1].imshow(destImage, cmap='gray')
+        axs[1].set_title('Local Maxima Image')
+        for ax in axs.flat:
+            ax.axis('off')
+        plt.show()
         # raise Exception("TODO 2 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
@@ -395,6 +403,22 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
             # TODO-BLOC-DEBUT
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
+
+            translation_1= np.array([[1,0,-f.pt[0]],[0,1,-f.pt[1]],[0,0,1]])
+
+            translation_2 = np.array([[1,0,4],
+                                      [0,1,4],
+                                      [0,0,1]])
+
+            rotation = np.array([[np.cos(-np.radians(f.angle)),-np.sin(-np.radians(f.angle)), 0],
+                                 [np.sin(-np.radians(f.angle)), np.cos(-np.radians(f.angle)), 0],
+                                                      [0, 0, 1]]                                 )
+            scale = np.array([[.2,0,0],
+                              [0,.2,0],
+                              [0,0,1]])
+
+            transMx = np.dot(translation_2,np.dot(scale,np.dot(rotation,translation_1)))
+            transMx = transMx[0:2,0:3]
             # TODO-BLOC-FIN
 
             # Appel la fonction de distorsion affine pour effectuer le mappage
@@ -410,9 +434,10 @@ class MOPSFeatureDescriptor(FeatureDescriptor):
             # dans le tableau 'desc'.
             # TODO-BLOC-DEBUT
 
-            print(f'destImage: {destImage}')
-            # Sélectionnez la partie de la transformation résultante correspondant au patch 8x8
-            desc[i, :] = (destImage - np.mean(destImage)) / np.std(destImage) if np.abs(np.std(destImage)) > 1e-10 else 0
+            if( np.std( destImage - np.mean(destImage) ) < 10**(-5) ):
+                desc[i] = np.zeros((64)).reshape(-1)
+            else:
+                desc[i] = ((destImage - np.mean(destImage)) / np.std(destImage)).reshape(-1)
 
             # N'oubliez pas d'enlever ou de commenter la ligne en dessous
             # quand vous implémentez le code de ce TODO
@@ -527,9 +552,18 @@ class SSDFeatureMatcher(FeatureMatcher):
         # la plus proche de la seconde image on utilisant la distance SMC entre
         # descripteurs.
         # TODO-BLOC-DEBUT
+        distance = scipy.spatial.distance.cdist(desc1, desc2, 'euclidean')
+
+        for i in range(desc1.shape[0]):
+            similar = cv2.DMatch()
+            similar.queryIdx = i
+            similar.trainIdx = np.argmin(distance[i])
+            similar.distance = distance[i, similar.trainIdx]
+            matches.append(similar)
+
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        raise Exception("TODO 7 : dans features.py non implémenté")
+        # raise Exception("TODO 7 : dans features.py non implémenté")
         # TODO-BLOC-FIN
 
         return matches
@@ -573,7 +607,23 @@ class RatioFeatureMatcher(FeatureMatcher):
         # TODO-BLOC-DEBUT
         # N'oubliez pas d'enlever ou de commenter la ligne en dessous
         # quand vous implémentez le code de ce TODO
-        raise Exception("TODO 8 : dans features.py non implémenté")
+        distance = scipy.spatial.distance.cdist(desc1, desc2, 'euclidean')
+
+        for i in range(desc1.shape[0]):
+            similar = cv2.DMatch()
+            similar.queryIdx = i
+            similar.distance = distance[i, 0]
+            similar.trainIdx = 0
+            for j in range(1, desc2.shape[0]):
+                if distance[i, j] < similar.distance:
+                    similar.distance = distance[i, j]
+                    similar.trainIdx = j
+            matches.append(similar)
+
+        # matches = [element for element in matches if element.distance < 0.7 * similar.distance]
+        matches = [element for element in matches if np.abs(element.distance - similar.distance) < 0.7]
+        print(matches)
+        # raise Exception("TODO 8 : dans features.py non implémenté")
         # TODO-BLOC-END
 
         return matches
